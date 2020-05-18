@@ -82,6 +82,40 @@ class Puzzle(object):
         self.goal_state = goal_state
         self.visited_states = [init_state]
 
+    #Check if a puzzle is solvable
+    def checkSolvable(self, state):
+        inversions = 0
+        singleDim = []
+        (y, x) = (0, 0)
+
+        #Calculate the number of inversions in a given state
+        for i in range(0, len(state)):
+            for j in range(0, len(state)):
+                singleDim.append(state[i][j])
+                if state[i][j] == 0:
+                    (y, x) = (i, j)
+        for i in range(0, len(singleDim)-1):
+            for j in range(i+1, len(singleDim)):
+                if singleDim[j] and singleDim[i] and singleDim[i] > singleDim[j]:
+                    inversions += 1
+
+        #If there is an odd no. of states
+        if len(state) % 2 == 1:
+            #Solvable if there is an even no. of inversions
+            if (inversions % 2) == 0:
+                return True
+            else:
+                return False
+
+        #If there is an even no. of states
+        else:
+            #Solvable if blank is (1) on even row counting from bottom and inversions is odd or (2) odd row counting from bottom and inversions is even
+            if (y % 2 == 0 and inversions % 2 == 1) or \
+               (y % 2 == 1 and inversions % 2 == 0):
+                return True
+            else:
+                return False
+
     #Check if 2 states are the same
     def isequalStates(self, state1, state2):
         for i in range(len(state1)):
@@ -111,6 +145,10 @@ class Puzzle(object):
         return output
 
     def solve(self):
+        if self.checkSolvable(Node(init_state).state) == False:
+            print("The puzzle is unsolvable!")
+            return ["UNSOLVABLE"]
+
         #Trivial case: if the init state is already a goal state
         if(self.init_state == self.goal_state):
             return None
@@ -126,9 +164,6 @@ class Puzzle(object):
                     if (neighbour.state == self.goal_state):
                         return self.terminate(neighbour)
                     frontier.append(neighbour)
-
-        return ["UNSOLVABLE"]
-
 
 if __name__ == "__main__":
     start_time = time.time()
