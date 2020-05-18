@@ -83,7 +83,7 @@ class Puzzle(object):
         self.visited_states = [init_state]
 
     #Check if a puzzle is solvable
-    def checkSolvable(self, state):
+    def isSolvable(self, state):
         inversions = 0
         singleDim = []
         (y, x) = (0, 0)
@@ -145,7 +145,7 @@ class Puzzle(object):
         return output
 
     def solve(self):
-        if self.checkSolvable(Node(init_state).state) == False:
+        if self.isSolvable(Node(init_state).state) == False:
             print("The puzzle is unsolvable!")
             return ["UNSOLVABLE"]
 
