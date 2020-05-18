@@ -22,15 +22,15 @@ class Node(object):
         self.action = action
         self.location = location
 
+    #Find the blank/0 in a given state
     def findBlank(self):
-        (y, x) = (0, 0)
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if self.state[i][j] == 0:
                     return (i, j)
         print("There's no zero in the puzzle error")
 
-    # Given a particular node, this method allows you to list all the neigihbours of the node
+    #Given a particular node, this method allows you to list all the neigihbours of the node
     def move(self, xsrc, ysrc, xdest, ydest):
         output = []
         for i in range(len(self.state)):
@@ -41,6 +41,7 @@ class Node(object):
         output[xsrc][ysrc], output[xdest][ydest] = output[xdest][ydest], output[xsrc][ysrc]
         return output
 
+    #Create the children/neighbours of a given node
     def get_neighbours(self):
         # UP,DOWN,LEFT,RIGHT
 
@@ -77,11 +78,11 @@ class Node(object):
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        # you may add more attributes if you think is useful
         self.init_state = init_state
         self.goal_state = goal_state
         self.visited_states = [init_state]
 
+    #Check if 2 states are the same
     def isequalStates(self, state1, state2):
         for i in range(len(state1)):
             for j in range(len(state2)):
@@ -89,15 +90,18 @@ class Puzzle(object):
                     return False
         return True
 
+    #Checks if a state is a goal state
     def isGoalState(self, state):
         return self.isequalStates(self.goal_state, state)
 
+    #Checks if a state has already been visited
     def visited_node(self, node):
         for state in self.visited_states:
             if (self.isequalStates(node.state, state)):
                 return True
         return False
 
+    #Returns the list of actions once the goal state is found
     def terminate(self, node):
         output = []
         while(node.parent != None):
@@ -107,10 +111,7 @@ class Puzzle(object):
         return output
 
     def solve(self):
-        # TODO
-        # implement your search algorithm here
-
-        # trivial case
+        #Trivial case: if the init state is already a goal state
         if(self.init_state == self.goal_state):
             return None
 
@@ -126,7 +127,7 @@ class Puzzle(object):
                         return self.terminate(neighbour)
                     frontier.append(neighbour)
 
-        return ["UNSOLVABLE"]  # sample output
+        return ["UNSOLVABLE"]
 
 
 if __name__ == "__main__":
