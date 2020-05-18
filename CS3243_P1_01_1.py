@@ -20,6 +20,7 @@ class Node(object):
         self.dimension = len(state)
         self.action = action
         self.location = location
+        self.hash = self.gethash()
 
     #Find the blank/0 in a given state
     def findBlank(self):
@@ -39,6 +40,28 @@ class Node(object):
             output.append(list)
         output[xsrc][ysrc], output[xdest][ydest] = output[xdest][ydest], output[xsrc][ysrc]
         return output
+
+    #Retrieve a hash given a node
+    def gethash(self):
+        temp = []
+        total = 0
+        for list in self.state:
+            for i in list:
+                temp.append(i)
+        x = len(temp)
+        for i in range(x-1):
+            greater = 0
+            y = x-i-1
+            factorial = 1
+            if (temp[i]==0):
+                continue
+            for j in range (i+1,x):
+                factorial *= y
+                y-=1
+                if (temp[j]<temp[i]):
+                    greater+=1
+            total += greater * factorial
+        return total 
 
     #Create the children/neighbours of a given node
     def get_neighbours(self):
@@ -80,6 +103,8 @@ class Puzzle(object):
         self.init_state = init_state
         self.goal_state = goal_state
         self.visited_states = [init_state]
+        self.goalhash = Node(goal_state).hash
+        self.hashTable = self.generateHashTable()
 
     #Check if a puzzle is solvable
     def isSolvable(self, state):
@@ -143,24 +168,35 @@ class Puzzle(object):
         print("The puzzle was solved in", len(output), "steps!")
         return output
 
+    #Generates hash table
+    def generateHashTable(self):
+        n = len(self.init_state)
+        n *= n
+        factorial = 1
+        for i in range(1,n+1):
+            factorial *= i
+        return [0]*factorial
+
     def solve(self):
-        if self.isSolvable(Node(init_state).state) == False:
+        if self.isSolvable(Node(self.init_state).state) == False:
             print("The puzzle is unsolvable!")
             return ["UNSOLVABLE"]
 
         #Trivial case: if the init state is already a goal state
-        if(self.init_state == self.goal_state):
+        source = Node(self.init_state)
+        self.hashTable[source.hash] = 1 ## The source has been visited so mark it as 1
+        #trivial case
+        if (source.hash==self.goalhash):
             return None
-
-        source = Node(init_state)
+        
         frontier = [source]
-        while (len(frontier) != 0):
+        while (len(frontier)!=0):
             node = frontier.pop(0)
 
             for neighbour in node.get_neighbours():
-                if (neighbour.state not in self.visited_states):
-                    self.visited_states.append(neighbour.state)
-                    if (neighbour.state == self.goal_state):
+                if (self.hashTable[neighbour.hash]==0):
+                    self.hashTable[neighbour.hash]=1
+                    if (neighbour.hash==self.goalhash):
                         return self.terminate(neighbour)
                     frontier.append(neighbour)
 

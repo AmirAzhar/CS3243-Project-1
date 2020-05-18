@@ -178,7 +178,7 @@ class Puzzle(object):
         return [0]*factorial
 
     def solve(self):
-        if self.isSolvable(Node(init_state).state) == False:
+        if self.isSolvable(Node(self.init_state).state) == False:
             print("The puzzle is unsolvable!")
             return ["UNSOLVABLE"]
 
