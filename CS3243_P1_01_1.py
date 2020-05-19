@@ -5,7 +5,7 @@ import os
 import sys
 import math
 from collections import deque
-from Queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
+from queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
 import time
 
 # Running script on your own - given code can be run with the command:
@@ -34,7 +34,7 @@ class Node(object):
         self.string = str(state)
         self.pathCost = 0
 
-    #Get manhattan distance
+    #Get Manhattan Distance heuristic
     def getMD(self):
         totalDist = 0
         size = len(self.state)
@@ -49,6 +49,50 @@ class Node(object):
                     currDist = colDiff + rowDiff
                     totalDist += currDist
         return totalDist
+
+    #Get Linear Conflict heuristic
+    def getLC(self):
+        size = len(self.state)
+        rowPos = [0] * (size**2)
+        colPos = [0] * (size**2)
+        totalConflicts = 0
+        
+        #Fill up the 1D array with the index's corresponding row and col pos eg. rowTiles[1] and colTiles[1] will hold the y nd x coordinates of the goal tile, respectively
+        for i in range(0, size):
+            for j in range(0, size):
+                num = self.state[i][j]
+                if num != 0:
+                    actualRow = (num - 1) // size
+                    actualCol = (num - 1) % size
+                    rowPos[num] = actualRow
+                    colPos[num] = actualCol
+
+        #Calculate row conflicts
+        for row in range(size):
+            for currTile in range(size):
+                # (1) compTile goal to the right of currTile goal
+                for compTile in range(currTile+1, size):
+                    # (2) Both tiles on the same line
+                    # (3) currTile is to the right of comparingTile
+                    # (4) Goal positions are both in that line
+                    if rowPos[self.state[row][currTile]] == rowPos[self.state[row][compTile]] and colPos[self.state[row][currTile]] > colPos[self.state[row][compTile]]and row == rowPos[self.state[row][currTile]]:
+                        totalConflicts += 1
+
+        #Calculate col conflicts (repeat)
+        for col in range(size):
+            for currTile in range(size):
+                # (1) compTile goal to the right of currTile goal
+                for compTile in range(currTile+1, size):
+                    # (2) Both tiles on the same line
+                    # (3) currTile is to the right of comparingTile
+                    # (4) Goal positions are both in that line
+                    if colPos[self.state[currTile][col]] == colPos[self.state[compTile][col]] and rowPos[self.state[currTile][col]] > rowPos[self.state[compTile][col]]and row == colPos[self.state[currTile][col]]:
+                        totalConflicts += 1
+        
+        #Return h(s) = MD(s) + LC(s)  (where LC(s) is totalConflicts*2)
+        return totalConflicts*2 + self.getMD()
+        
+
 
     #Find the blank/0 in a given state
     def findBlank(self):
@@ -152,6 +196,7 @@ class Puzzle(object):
         print("The puzzle was solved in", len(output), "steps!")
         return output
 
+    #Solving using Linear Conflict heuristic
     def solve(self):
         if self.isSolvable(Node(self.init_state).state) == False:
             return ["UNSOLVABLE"]
@@ -162,7 +207,7 @@ class Puzzle(object):
         if (hash(source.string)==self.goalstringhash):
             return None
         frontier = PriorityQueue()
-        frontier.put(PriorityEntry(source.getMD(),source))
+        frontier.put(PriorityEntry(source.getLC(),source))
 
         while (not frontier.empty()):
             node = frontier.get().data
@@ -172,7 +217,7 @@ class Puzzle(object):
                     self.set.add(neighbour.string)
                     if (hash(neighbour.string)==self.goalstringhash):
                         return self.terminate(neighbour)
-                    evaluation = neighbour.pathCost + neighbour.getMD()
+                    evaluation = neighbour.pathCost + neighbour.getLC()
                     frontier.put(PriorityEntry(evaluation, neighbour))
         
         return ["UNSOLVABLE"]
