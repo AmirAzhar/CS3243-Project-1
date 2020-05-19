@@ -5,14 +5,14 @@ import os
 import sys
 import math
 from collections import deque
-from queue import PriorityQueue
+from Queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
 import time
 
 # Running script on your own - given code can be run with the command:
 # python file.py, ./path/to/init_state.txt ./output/output.txt
 
+#Class used for Priority Queue
 class PriorityEntry(object):
-
     def __init__(self, priority, data):
         self.data = data
         self.priority = priority
