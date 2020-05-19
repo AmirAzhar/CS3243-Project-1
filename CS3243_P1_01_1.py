@@ -5,7 +5,7 @@ import os
 import sys
 import math
 from collections import deque
-from queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
+from Queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
 import time
 
 # Running script on your own - given code can be run with the command:
