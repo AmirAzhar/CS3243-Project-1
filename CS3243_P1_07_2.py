@@ -9,6 +9,15 @@ from queue import PriorityQueue
 # Running script on your own - given code can be run with the command:
 # python file.py, ./path/to/init_state.txt ./output/output.txt
 
+class PriorityEntry(object):
+
+    def __init__(self, priority, data):
+        self.data = data
+        self.priority = priority
+
+    def __lt__(self, other):
+        return self.priority < other.priority
+
 class Node(object):
     # state is a list of lists representing the configuration of the puzzle
     # parent is reference to the state before the current state
@@ -24,7 +33,7 @@ class Node(object):
         self.pathCost = 0
 
     #Get manhattan distance
-    def getManhattanDistance(self):
+    def getMD(self):
         totalDist = 0
         size = len(self.state)
         for i in range(0, size):
@@ -144,24 +153,26 @@ class Puzzle(object):
         if self.isSolvable(Node(self.init_state).state) == False:
             return ["UNSOLVABLE"]
 
-        
         source = Node(self.init_state)
 
         #Trivial case: if the init state is already a goal state
         if (hash(source.string)==self.goalstringhash):
             return None
         frontier = PriorityQueue()
-        frontier.put(source,source.getManhattanDistance())
-        while (len(frontier)>0):
-            node = frontier.get()
+        frontier.put(PriorityEntry(source.getMD(),source))
 
+        while (not frontier.empty()):
+            node = frontier.get().data
             for neighbour in node.get_neighbours():
                 neighbour.pathCost = node.pathCost + 1
-                if (neighbour.string not in self.set and neighbour.pathCost < hash(node.string)):
+                if (neighbour.string not in self.set):
                     self.set.add(neighbour.string)
                     if (hash(neighbour.string)==self.goalstringhash):
                         return self.terminate(neighbour)
-                    frontier.put(neighbour, neighbour.pathCost + neighbour.getManhattanDistance())
+                    evaluation = neighbour.pathCost + neighbour.getMD()
+                    frontier.put(PriorityEntry(evaluation, neighbour))
+        
+        return ["UNSOLVABLE"]
 
 
 if __name__ == "__main__":
