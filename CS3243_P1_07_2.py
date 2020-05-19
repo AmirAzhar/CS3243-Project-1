@@ -6,6 +6,8 @@ import sys
 import math
 from collections import deque
 from queue import PriorityQueue
+import time
+
 # Running script on your own - given code can be run with the command:
 # python file.py, ./path/to/init_state.txt ./output/output.txt
 
@@ -146,7 +148,8 @@ class Puzzle(object):
         while(node.parent != None):
             output.insert(0, node.action)
             node = node.parent
-        
+            
+        print("The puzzle was solved in", len(output), "steps!")
         return output
 
     def solve(self):
@@ -176,6 +179,7 @@ class Puzzle(object):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     # do NOT modify below
 
     # argv[0] represents the name of the file that is being executed
@@ -224,3 +228,6 @@ if __name__ == "__main__":
     with open(sys.argv[2], 'a') as f:
         for answer in ans:
             f.write(answer+'\n')
+    
+    end_time = time.time()
+    print("It took", end_time-start_time, "seconds!")
