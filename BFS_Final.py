@@ -5,15 +5,13 @@ import os
 import sys
 import math
 from collections import deque
-# Running script on your own - given code can be run with the command:
-# python file.py, ./path/to/init_state.txt ./output/output.txt
 
 
 class Node(object):
-    # state is a list of lists representing the configuration of the puzzle
-    # parent is reference to the state before the current state
-    # action is what you did in the previous state to reach the current state.
-    # location of zero in the puzzle as a tuple
+    #State: list of lists representing the configuration of the puzzle
+    #Parent: reference to the state before the current state
+    #Action: what you did in the previous state to reach the current state.
+    #Location: Position of zero in the puzzle as a tuple
     def __init__(self, state, parent=None, action=None, location=None,static_dimension=None):
         self.state = state
         self.parent = parent
@@ -30,7 +28,7 @@ class Node(object):
                 return i
         print("There's no zero in the puzzle error")
 
-    #Given a particular node, this method allows you to list all the neigihbours of the node
+    #List all the neigihbours of a given node
     def move(self, xsrc, xdest):
         output = [i for i in self.state]
         output[xsrc], output[xdest] = output[xdest], output[xsrc]
@@ -38,42 +36,32 @@ class Node(object):
 
     #Create the children/neighbours of a given node
     def get_neighbours(self):
-        # UP,DOWN,LEFT,RIGHT
-
+        
         new_states = []
 
-        # get coordinate of the blank
+        #Get coordinate of the blank
         if (self.location == None):
             x = self.findBlank()
         else:
             x = self.location
 
-        # tries to add the right movement
+        #Tries to add the right movement
         if(x % self.static_dimension != 0  and  (x-1) >= 0):
-            #print("RIGHT ") 
-            #print(self.move(x-1 ,x))
             new_states.append(
                 Node(self.move(x-1 ,x), self, "RIGHT", x-1,self.static_dimension))
 
-
-        # tries to add the left movement
-        if(x % self.static_dimension != self.static_dimension-1 and (x+1) < self.dimension):
-            #print ("LEFT " )
-            #print(self.move(x+1,x)) 
+        #Tries to add the left movement
+        if(x % self.static_dimension != self.static_dimension-1 and (x+1) < self.dimension): 
             new_states.append(
                 Node(self.move(x+1,x), self, "LEFT", x+1,self.static_dimension))
 
-        # tries to add the up movement
+        #Tries to add the up movement
         if(x+self.static_dimension < self.dimension):
-            #print("UP" + " ") 
-            #print(self.move(x+self.static_dimension,x))
             new_states.append(
                 Node(self.move(x+self.static_dimension, x), self, "UP", x+self.static_dimension,self.static_dimension))
 
-        # tries add the down movement
+        #Tries to add the down movement
         if(x-self.static_dimension >= 0):
-            #print("DOWN"+ " ")
-            #print(self.move(x-self.static_dimension, x) )
             new_states.append(
                 Node(self.move(x-self.static_dimension, x), self, "DOWN",x-self.static_dimension,self.static_dimension))
 
@@ -90,47 +78,12 @@ class Puzzle(object):
         self.goalstringhash = hash(str(self.flatten_state(goal_state)))
         self.set=set()
 
-
+    #Convert 2D array to 1D
     def flatten_state(self,state):
         output = []
         for list in state:
             output.extend(list)
         return output
-
-    #Check if a puzzle is solvable
-    def isSolvable(self, state):
-        inversions = 0
-        singleDim = []
-        (y, x) = (0, 0)
-
-        #Calculate the number of inversions in a given state
-        for i in range(0, len(state)):
-            for j in range(0, len(state)):
-                singleDim.append(state[i][j])
-                if state[i][j] == 0:
-                    (y, x) = (i, j)
-        for i in range(0, len(singleDim)-1):
-            for j in range(i+1, len(singleDim)):
-                if singleDim[j] and singleDim[i] and singleDim[i] > singleDim[j]:
-                    inversions += 1
-
-        #If there is an odd no. of states
-        if len(state) % 2 == 1:
-            #Solvable if there is an even no. of inversions
-            if (inversions % 2) == 0:
-                return True
-            else:
-                return False
-
-        #If there is an even no. of states
-        else:
-            #Solvable if blank is (1) on even row counting from bottom and inversions is odd or (2) odd row counting from bottom and inversions is even
-            if (y % 2 == 0 and inversions % 2 == 1) or \
-               (y % 2 == 1 and inversions % 2 == 0):
-                return True
-            else:
-                return False
-
 
     #Returns the list of actions once the goal state is found
     def terminate(self, node):
@@ -141,13 +94,9 @@ class Puzzle(object):
         
         return output
 
+    #BFS Implementation
     def solve(self):
-        #if self.isSolvable(Node(self.init_state).state) == False:
-        #    return ["UNSOLVABLE"]
-
-        #Trivial case: if the init state is already a goal state
         source = Node(self.init_state,None,None,None,self.static_dimension)
-        #trivial case
         if (hash(source.string)==self.goalstringhash):
             return None
         frontier = deque()
@@ -161,6 +110,7 @@ class Puzzle(object):
                     if (hash(neighbour.string)==self.goalstringhash):
                         return self.terminate(neighbour)
                     frontier.append(neighbour)
+
         return ["UNSOLVABLE"]
 
 if __name__ == "__main__":
