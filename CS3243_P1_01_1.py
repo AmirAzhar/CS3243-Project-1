@@ -1,40 +1,26 @@
-## CS3243 Introduction to Artificial Intelligence
+# CS3243 Introduction to Artificial Intelligence
 # Project 1: k-Puzzle
 
 import os
 import sys
 import math
-from collections import deque
-from Queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
-import time
-
-# Running script on your own - given code can be run with the command:
-# python file.py, ./path/to/init_state.txt ./output/output.txt
-
-#Class used for Priority Queue
-class PriorityEntry(object):
-    def __init__(self, priority, data):
-        self.data = data
-        self.priority = priority
-
-    def __lt__(self, other):
-        return self.priority < other.priority
+import heapq
 
 class Node(object):
     #State: list of lists representing the configuration of the puzzle
     #Parent: reference to the state before the current state
     #Action: what you did in the previous state to reach the current state.
     #Location: Position of zero in the puzzle as a tuple
-    def __init__(self, state, parent=None, action=None, location=None):
+    def __init__(self, state, parent=None, action=None, location=None,pathcost = None):
         self.state = state
         self.parent = parent
         self.dimension = len(state)
         self.action = action
         self.location = location
         self.string = str(state)
-        self.pathCost = 0
+        self.pathcost = pathcost
 
-    #Get Manhattan Distance
+    #Get Manhattan Distance heuristic
     def getMD(self):
         totalDist = 0
         size = len(self.state)
@@ -50,12 +36,14 @@ class Node(object):
                     totalDist += currDist
         return totalDist
 
+
     #Find the blank/0 in a given state
     def findBlank(self):
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if self.state[i][j] == 0:
                     return (i, j)
+        print("There's no zero in the puzzle error")
 
     #List all the neigihbours of a given node
     def move(self, xsrc, ysrc, xdest, ydest):
@@ -65,8 +53,6 @@ class Node(object):
 
     #Create the children/neighbours of a given node
     def get_neighbours(self):
-        # UP,DOWN,LEFT,RIGHT
-
         new_states = []
 
         #Get coordinate of the blank
@@ -78,22 +64,22 @@ class Node(object):
         #Tries to add the down movement
         if(y-1 >= 0):
             new_states.append(
-                Node(self.move(x, y-1, x, y), self, "RIGHT", (x, y-1)))
+                Node(self.move(x, y-1, x, y), self, "RIGHT", (x, y-1),self.pathcost + 1))
 
         #Tries to add the up movement
         if(y+1 < self.dimension):
             new_states.append(
-                Node(self.move(x, y+1, x, y), self, "LEFT", (x, y+1)))
+                Node(self.move(x, y+1, x, y), self, "LEFT", (x, y+1),self.pathcost+1))
 
         #Tries to add the left movement
         if(x+1 < self.dimension):
             new_states.append(
-                Node(self.move(x+1, y, x, y), self, "UP", (x+1, y)))
+                Node(self.move(x+1, y, x, y), self, "UP", (x+1, y),self.pathcost+1))
 
         #Tries to add the right movement
         if(x-1 >= 0):
             new_states.append(
-                Node(self.move(x-1, y, x, y), self, "DOWN", (x-1, y)))
+                Node(self.move(x-1, y, x, y), self, "DOWN", (x-1, y),self.pathcost+1))
 
         return new_states
 
@@ -102,9 +88,44 @@ class Puzzle(object):
     def __init__(self, init_state, goal_state):
         self.init_state = init_state
         self.goal_state = goal_state
-        self.visited_states = [init_state]
         self.goalstringhash = hash(str(goal_state))
         self.set=set()
+
+    #Find total conflicts in a row
+    def rowconflict(self,candidate_row,goal_row):
+        x = len(candidate_row)
+        total = 0
+        while (True):
+            conflicts = [0] * x
+            conflictfound = False
+            for index1,tile1 in enumerate(candidate_row):
+                for index2,tile2 in enumerate(candidate_row):
+                    if index1 == index2 or tile1 not in goal_row or tile2 not in goal_row or tile1 <= 0 or tile2 <= 0 :
+                        continue
+                    if (goal_row.index(tile1) > goal_row.index(tile2) and index1 < index2):
+                        conflicts[index1] += 1
+                        conflictfound = True
+                    elif (goal_row.index(tile1)<goal_row.index(tile2) and index1 > index2):
+                        conflicts[index1] += 1
+                        conflictfound = True
+            if not conflictfound:
+                break
+            i = conflicts.index(max(conflicts))
+            candidate_row[i] = -1
+            total +=1
+        return total * 2
+
+    #Find total conflicts
+    def conflicts (self,candidate_state, goal_state):
+        conflicts = 0
+        for i in range(len(candidate_state)):
+            conflicts += self.rowconflict(candidate_state[i][:],goal_state[i][:])
+        transposed_candidate = [[candidate_state[j][i] for j in range(len(candidate_state))] for i in range(len(candidate_state[0]))] 
+        transposed_goal = [[goal_state[j][i] for j in range(len(goal_state))] for i in range(len(goal_state[0]))]
+        for i in range(len(candidate_state)):
+            conflicts += self.rowconflict(transposed_candidate[i][:],transposed_goal[i][:])
+        return conflicts
+
 
     #Check if a puzzle is solvable
     def isSolvable(self, state):
@@ -147,32 +168,33 @@ class Puzzle(object):
         while(node.parent != None):
             output.insert(0, node.action)
             node = node.parent
+        
         return output
 
-    #A* w/ Manhattan Distance Implementation
+    #A* w/ Linear Conflict Implementation
     def solve(self):
-        if self.isSolvable(Node(self.init_state).state) == False:
+        source = Node(self.init_state,None,None,None,0)
+        if self.isSolvable(source.state) == False:
             return ["UNSOLVABLE"]
 
-        source = Node(self.init_state)
-
+        frontier = []
+        heapq.heapify(frontier)
         if (hash(source.string)==self.goalstringhash):
             return None
-        frontier = PriorityQueue()
-        frontier.put(PriorityEntry(source.getMD(),source))
+        
+        #Linear Conflict heuristics = MD(n) + Conflicts(n)
+        heap_item = (source.pathcost + source.getMD() + self.conflicts(source.state,self.goal_state),source)
+        heapq.heappush(frontier,heap_item)
+        while (len(frontier)>0):
 
-        while (not frontier.empty()):
-            node = frontier.get().data
+            node = heapq.heappop(frontier)[1]
             for neighbour in node.get_neighbours():
-                neighbour.pathCost = node.pathCost + 1
                 if (neighbour.string not in self.set):
                     self.set.add(neighbour.string)
                     if (hash(neighbour.string)==self.goalstringhash):
                         return self.terminate(neighbour)
-                    f = neighbour.pathCost + neighbour.getMD()
-                    frontier.put(PriorityEntry(f, neighbour))
-        
-        return ["UNSOLVABLE"]
+                    heapq.heappush(frontier,(neighbour.pathcost+ neighbour.getMD()
+                     + self.conflicts(neighbour.state,self.goal_state),neighbour))
 
 
 if __name__ == "__main__":
@@ -224,3 +246,4 @@ if __name__ == "__main__":
     with open(sys.argv[2], 'a') as f:
         for answer in ans:
             f.write(answer+'\n')
+

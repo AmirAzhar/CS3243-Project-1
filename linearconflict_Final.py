@@ -5,14 +5,12 @@ import os
 import sys
 import math
 import heapq
-# Running script on your own - given code can be run with the command:
-# python file.py, ./path/to/init_state.txt ./output/output.txt
 
 class Node(object):
-    # state is a list of lists representing the configuration of the puzzle
-    # parent is reference to the state before the current state
-    # action is what you did in the previous state to reach the current state.
-    # location of zero in the puzzle as a tuple
+    #State: list of lists representing the configuration of the puzzle
+    #Parent: reference to the state before the current state
+    #Action: what you did in the previous state to reach the current state.
+    #Location: Position of zero in the puzzle as a tuple
     def __init__(self, state, parent=None, action=None, location=None,pathcost = None):
         self.state = state
         self.parent = parent
@@ -21,7 +19,8 @@ class Node(object):
         self.location = location
         self.string = str(state)
         self.pathcost = pathcost
-        #Get Manhattan Distance heuristic
+
+    #Get Manhattan Distance heuristic
     def getMD(self):
         totalDist = 0
         size = len(self.state)
@@ -46,7 +45,7 @@ class Node(object):
                     return (i, j)
         print("There's no zero in the puzzle error")
 
-    #Given a particular node, this method allows you to list all the neigihbours of the node
+    #List all the neigihbours of a given node
     def move(self, xsrc, ysrc, xdest, ydest):
         output = [row[:] for row in self.state]
         output[xsrc][ysrc], output[xdest][ydest] = output[xdest][ydest], output[xsrc][ysrc]
@@ -54,32 +53,30 @@ class Node(object):
 
     #Create the children/neighbours of a given node
     def get_neighbours(self):
-        # UP,DOWN,LEFT,RIGHT
-
         new_states = []
 
-        # get coordinate of the blank
+        #Get coordinate of the blank
         if (self.location == None):
             (x, y) = self.findBlank()
         else:
             (x, y) = self.location
 
-        # tries add the down movement
+        #Tries to add the down movement
         if(y-1 >= 0):
             new_states.append(
                 Node(self.move(x, y-1, x, y), self, "RIGHT", (x, y-1),self.pathcost + 1))
 
-        # tries to add the up movement
+        #Tries to add the up movement
         if(y+1 < self.dimension):
             new_states.append(
                 Node(self.move(x, y+1, x, y), self, "LEFT", (x, y+1),self.pathcost+1))
 
-        # tries to add the left movement
+        #Tries to add the left movement
         if(x+1 < self.dimension):
             new_states.append(
                 Node(self.move(x+1, y, x, y), self, "UP", (x+1, y),self.pathcost+1))
 
-        # tries to add the right movement
+        #Tries to add the right movement
         if(x-1 >= 0):
             new_states.append(
                 Node(self.move(x-1, y, x, y), self, "DOWN", (x-1, y),self.pathcost+1))
@@ -94,6 +91,7 @@ class Puzzle(object):
         self.goalstringhash = hash(str(goal_state))
         self.set=set()
 
+    #Find total conflicts in a row
     def rowconflict(self,candidate_row,goal_row):
         x = len(candidate_row)
         total = 0
@@ -117,6 +115,7 @@ class Puzzle(object):
             total +=1
         return total * 2
 
+    #Find total conflicts
     def conflicts (self,candidate_state, goal_state):
         conflicts = 0
         for i in range(len(candidate_state)):
@@ -172,17 +171,18 @@ class Puzzle(object):
         
         return output
 
+    #A* w/ Linear Conflict Implementation
     def solve(self):
         source = Node(self.init_state,None,None,None,0)
         if self.isSolvable(source.state) == False:
             return ["UNSOLVABLE"]
 
-        #Trivial case: if the init state is already a goal state
         frontier = []
         heapq.heapify(frontier)
-        #trivial case
         if (hash(source.string)==self.goalstringhash):
             return None
+        
+        #Linear Conflict heuristics = MD(n) + Conflicts(n)
         heap_item = (source.pathcost + source.getMD() + self.conflicts(source.state,self.goal_state),source)
         heapq.heappush(frontier,heap_item)
         while (len(frontier)>0):

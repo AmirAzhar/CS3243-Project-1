@@ -5,11 +5,8 @@ import os
 import sys
 import math
 from collections import deque
-from Queue import PriorityQueue #use Queue when putting in codepost since it runs python 2.7, use queue for python 3 and above
+from Queue import PriorityQueue 
 import time
-
-# Running script on your own - given code can be run with the command:
-# python file.py, ./path/to/init_state.txt ./output/output.txt
 
 #Class used for Priority Queue
 class PriorityEntry(object):
@@ -65,8 +62,6 @@ class Node(object):
 
     #Create the children/neighbours of a given node
     def get_neighbours(self):
-        # UP,DOWN,LEFT,RIGHT
-
         new_states = []
 
         #Get coordinate of the blank
